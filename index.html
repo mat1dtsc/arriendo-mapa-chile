@@ -227,12 +227,26 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-const DATA = {"casas":[],"metro":[],"lineas":[],"paraderos":[]};
-</script>
 <script src="data.js"></script>
 <script>
-const CASAS = DATA.casas, METRO = DATA.metro, LINEAS = DATA.lineas;
+// Descomprimir el dataset (zlib+base64) sin librerías externas
+async function cargarData(){
+  const bytes = Uint8Array.from(atob(DATA_B64), ch=>ch.charCodeAt(0));
+  const ds = new DecompressionStream("deflate");
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  const texto = await new Response(stream).text();
+  return JSON.parse(texto);
+}
+let CASAS=[], METRO=[], LINEAS=[];
+
+cargarData().then(d=>{
+  CASAS = d.casas; METRO = d.metro; LINEAS = d.lineas;
+  iniciarApp();
+}).catch(err=>{
+  document.getElementById("resumen").textContent = "Error cargando datos: "+err;
+});
+
+function iniciarApp(){
 const fmt = n => "$" + n.toLocaleString("es-CL");
 const fmtK = n => n>=1000000 ? "$"+(n/1000000).toLocaleString("es-CL")+" M" : "$"+Math.round(n/1000)+" mil";
 const colorPrecio = c => c.estado==="despublicado" ? "#94a3b8" : (c.precio<=500000 ? "#0f9d6c" : (c.precio<=650000 ? "#b07417" : "#c2410c"));
@@ -477,9 +491,16 @@ function buscar(){
     }
   }
 }
+window.buscar = buscar;
+window.aplicar = aplicar;
+window.limpiar = limpiar;
+window.seg = seg;
+window.chip = chip;
+window.capas = capas;
 document.getElementById("q").addEventListener("keydown", e=>{ if(e.key==="Enter") buscar(); });
 
 aplicar();
+}
 </script>
 </body>
 </html>
