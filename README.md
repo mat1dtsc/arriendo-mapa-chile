@@ -2,7 +2,7 @@
 
 > Plataforma **gratuita** con IA para buscar casas en arriendo en Chile. Mapa interactivo de toda la Región Metropolitana, scoring de locomoción, filtros por rangos y asistente de búsqueda en lenguaje natural.
 
-![Status](https://img.shields.io/badge/status-MVP-green) ![Comunas](https://img.shields.io/badge/comunas-19-blue) ![Avisos](https://img.shields.io/badge/avisos-111-orange) ![Metro](https://img.shields.io/badge/líneas%20metro-8-red)
+![Status](https://img.shields.io/badge/status-MVP-green) ![Comunas](https://img.shields.io/badge/comunas-19-blue) ![Avisos](https://img.shields.io/badge/avisos-111-orange) ![Metro](https://img.shields.io/badge/líneas%20metro-8-red) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ## 🎯 ¿Qué es?
 
@@ -29,10 +29,10 @@ Una alternativa gratuita y abierta a los portales de arriendo tradicionales. En 
 
 ## 🏗️ Stack
 
-- **Frontend**: HTML + CSS + JavaScript vanilla (sin build)
+- **Frontend**: HTML + CSS + JavaScript vanilla (sin build, sin dependencias pesadas)
 - **Mapa**: Leaflet + CARTO basemaps
-- **Datos**: OpenStreetMap (Metro), portales inmobiliarios (avisos Puente Alto)
-- **Todo local**: sin backend, sin dependencias pesadas, abre al instante
+- **Datos**: OpenStreetMap (Metro, ODbL), portales inmobiliarios (avisos Puente Alto)
+- **Dataset**: comprimido zlib+base64 (~10 KB), descomprimido en el navegador con `DecompressionStream`
 
 > Estructura inspirada en [CotizadorIA-v2](https://github.com/mat1dtsc/CotizadorIA-v2) (proyecto de Demian), adaptada al dominio inmobiliario.
 
@@ -60,17 +60,18 @@ python -m http.server  # Python
 ```
 arriendo-mapa-chile/
 ├── index.html   # App completa (mapa + filtros + fichas + búsqueda)
-├── data.js      # Dataset: avisos + red Metro + estaciones
+├── data.js      # Dataset comprimido (avisos + red Metro + estaciones)
 └── README.md
 ```
 
 ## 🗺️ Roadmap
 
 - [x] Mapa interactivo Santiago completo
-- [x] Red Metro real con 8 líneas
+- [x] Red Metro real con 8 líneas y 126 estaciones
 - [x] Filtros por rangos y amenidades
 - [x] Scoring de locomoción 1–5
 - [x] Búsqueda en lenguaje natural
+- [x] Dataset comprimido para carga rápida
 - [ ] **Backend con Supabase** — avisos en base de datos, actualización en vivo
 - [ ] **Publicar aviso** — formulario para dueños/corredoras
 - [ ] **Más regiones** — Valparaíso, Concepción, La Serena
