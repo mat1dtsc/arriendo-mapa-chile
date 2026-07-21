@@ -2,7 +2,7 @@
 
 > Plataforma **gratuita** con IA para buscar casas en arriendo en Chile. Mapa interactivo de toda la Región Metropolitana, scoring de locomoción, filtros por rangos y asistente de búsqueda en lenguaje natural.
 
-![Status](https://img.shields.io/badge/status-MVP-green) ![Comunas](https://img.shields.io/badge/comunas-19-blue) ![Avisos](https://img.shields.io/badge/avisos-111-orange) ![Metro](https://img.shields.io/badge/líneas%20metro-8-red) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Status](https://img.shields.io/badge/status-MVP-green) ![Comunas](https://img.shields.io/badge/comunas-18-blue) ![Avisos](https://img.shields.io/badge/avisos-136-orange) ![Metro](https://img.shields.io/badge/líneas%20metro-8-red) ![Inundación](https://img.shields.io/badge/puntos_cr%C3%ADticos_lluvia-154-blue) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ## 🎯 ¿Qué es?
 
@@ -20,9 +20,11 @@ Una alternativa gratuita y abierta a los portales de arriendo tradicionales. En 
 |---|---|
 | 🗺️ **Mapa Santiago completo** | 19 comunas, tiles CARTO, zoom y navegación libre |
 | 🚇 **Red Metro real** | 8 líneas con color oficial y 126 estaciones reales (OpenStreetMap) |
-| 🔍 **Búsqueda en lenguaje natural** | Interpreta presupuesto, dormitorios, comuna, locomoción |
+| 🔍 **Búsqueda por texto** | Filtra por sector, comuna y características (asistente IA con Claude API: en desarrollo) |
 | 🎚️ **Filtros por rangos** | Precio min/max, m², dormitorios, baños, comuna, distancia al Metro |
-| ⭐ **Scoring 1–5** | Locomoción (Metro + paraderos) y precio por m², calculados con datos reales |
+| 💧 **Riesgo de invierno** | 154 puntos críticos oficiales geocodificados (GORE RM, jul-2026) + canal San Carlos y Zanjón de la Aguada; nivel de riesgo por propiedad |
+| 🚌 **Locomoción real (GTFS)** | Recorridos de micros, buses/hora en punta, paradero y Metro más cercanos, desde el GTFS de Red Movilidad (DTPM) |
+| ⭐ **Score 0–100** | Locomoción combinada (Metro + micros + frecuencia) y precio $/m² vs mediana comunal |
 | ✨ **Amenidades** | Estacionamiento, mascotas, piscina, condominio |
 | 🏠 **Fichas con fotos** | Galería, calles cercanas, estado del precio y link al aviso original |
 | 📱 **Responsive** | Panel lateral colapsable en móvil |
@@ -31,8 +33,8 @@ Una alternativa gratuita y abierta a los portales de arriendo tradicionales. En 
 
 - **Frontend**: HTML + CSS + JavaScript vanilla (sin build, sin dependencias pesadas)
 - **Mapa**: Leaflet + CARTO basemaps
-- **Datos**: OpenStreetMap (Metro, ODbL), portales inmobiliarios (avisos Puente Alto)
-- **Dataset**: comprimido zlib+base64 (~10 KB), descomprimido en el navegador con `DecompressionStream`
+- **Datos**: OpenStreetMap (Metro y calles, ODbL), portales inmobiliarios (avisos), GORE RM (puntos críticos de lluvia), DTPM Red Movilidad (GTFS)
+- **Dataset**: `datos.js` plano (~460 KB) con riesgo de inundación y locomoción precalculados por propiedad
 
 > Estructura inspirada en [CotizadorIA-v2](https://github.com/mat1dtsc/CotizadorIA-v2) (proyecto de Demian), adaptada al dominio inmobiliario.
 

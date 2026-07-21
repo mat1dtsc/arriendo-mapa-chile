@@ -1,764 +1,353 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ArriendoMapa Chile · Casas en Puente Alto</title>
-<link rel="stylesheet" href="lib/leaflet.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ArriendoMapa · La verdad de la calle antes de arrendar</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#f4f6f9; --panel:#ffffff; --line:#e2e8f0; --txt:#17223b; --mut:#64748b;
-         --acc:#2E5E8C; --acc2:#ffd54a; --verde:#34d399; --naranjo:#fb923c; }
-  *{box-sizing:border-box; margin:0; padding:0}
-  html,body{height:100%; background:var(--bg); color:var(--txt); font-family:'Segoe UI',system-ui,sans-serif; overflow:hidden}
-  #app{display:flex; height:100%}
-  /* ---------- PANEL IZQUIERDO ---------- */
-  #side{width:400px; min-width:400px; background:var(--panel); border-right:1px solid var(--line);
-    display:flex; flex-direction:column; z-index:20; box-shadow:2px 0 16px rgba(0,0,0,.06)}
-  #brand{padding:14px 18px 10px; display:flex; align-items:center; gap:10px}
-  #brand .logo{width:34px; height:34px; background:var(--acc); color:#fff; border-radius:10px;
-    display:flex; align-items:center; justify-content:center; font-size:18px}
-  #brand h1{font-size:17px; font-weight:800}
-  #brand h1 span{color:var(--acc)}
-  #brand p{font-size:11px; color:var(--mut)}
-  #searchbox{padding:0 14px 10px; position:relative}
-  #q{width:100%; padding:11px 40px 11px 14px; border:1.5px solid var(--line); border-radius:12px;
-    font-size:14px; outline:none; transition:.15s}
-  #q:focus{border-color:var(--acc); box-shadow:0 0 0 3px rgba(46,94,140,.12)}
-  #qbtn{position:absolute; right:22px; top:8px; background:none; border:none; font-size:17px; cursor:pointer; color:var(--acc)}
-  #chips{padding:0 14px 8px; display:flex; flex-wrap:wrap; gap:6px}
-  .chip{font-size:11.5px; padding:5px 11px; border-radius:20px; border:1px solid var(--line);
-    background:#f8fafc; cursor:pointer; color:var(--mut); transition:.15s}
-  .chip:hover{border-color:var(--acc); color:var(--acc)}
-  .chip.on{background:var(--acc); color:#fff; border-color:var(--acc)}
-  #filtros{padding:8px 14px 10px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:#fbfcfe}
-  .frow{display:flex; align-items:center; gap:10px; margin:7px 0}
-  .frow label{font-size:11.5px; color:var(--mut); width:92px; flex-shrink:0}
-  .frow input[type=range]{flex:1; accent-color:var(--acc); height:3px}
-  .frow .val{font-size:12px; font-weight:700; width:78px; text-align:right}
-  .frow select{flex:1; padding:5px 8px; border:1px solid var(--line); border-radius:8px; font-size:12.5px; background:#fff}
-  .stars{color:#f5b301; font-size:12px; letter-spacing:1px}
+:root{
+  --fondo:#0B1620; --panel:#101F2C; --panel2:#16293A; --borde:#223A4E;
+  --texto:#ECF4F9; --sub:#8FB0C4;
+  --agua:#41C6E0; --alerta:#FFC53D; --peligro:#FF5D4D; --ok:#3FD68F; --atento:#6EA8C9;
+  --cauce:#2F86D6; --colector:#8F7BF0; --quebrada:#C9834F;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Archivo',system-ui,sans-serif;background:var(--fondo);color:var(--texto);overflow:hidden}
+.mono{font-family:'IBM Plex Mono',monospace}
 
-  .fsec{font-size:10.5px; font-weight:800; color:var(--acc); text-transform:uppercase; letter-spacing:.8px;
-    margin:12px 0 2px; padding-top:8px; border-top:1px solid var(--line)}
-  .fsec:first-child{border-top:none; padding-top:0; margin-top:2px}
-  .seg{display:flex; gap:4px; flex:1}
-  .seg button{flex:1; padding:5px 0; font-size:11.5px; font-weight:700; border:1px solid var(--line);
-    background:#fff; border-radius:8px; cursor:pointer; color:var(--mut); transition:.12s}
-  .seg button.on{background:var(--acc); color:#fff; border-color:var(--acc)}
-  .seg button:hover:not(.on){border-color:var(--acc); color:var(--acc)}
-  #amen{display:flex; flex-direction:column; gap:6px; margin:4px 0}
-  #amen label{display:flex; align-items:center; gap:7px; font-size:12.5px; cursor:pointer; color:var(--txt)}
-  #amen input{accent-color:var(--acc)}
-  #limpiar{width:100%; margin-top:12px; padding:9px 0; background:#f1f5f9; border:1px solid var(--line);
-    border-radius:10px; font-size:12.5px; font-weight:700; color:var(--mut); cursor:pointer}
-  #limpiar:hover{border-color:var(--acc); color:var(--acc)}
-  #capas{padding:6px 14px 10px; display:flex; gap:14px; font-size:12px; color:var(--mut)}
-  #capas label{display:flex; align-items:center; gap:5px; cursor:pointer}
-  #capas input{accent-color:var(--acc)}
-  #results{flex:1; overflow-y:auto; padding:10px 14px}
-  #resumen{font-size:12px; color:var(--mut); padding:4px 2px 10px}
-  .card{border:1px solid var(--line); border-radius:14px; margin-bottom:12px; overflow:hidden; cursor:pointer;
-    transition:.15s; background:#fff}
-  .card:hover{border-color:var(--acc); box-shadow:0 4px 18px rgba(46,94,140,.15); transform:translateY(-1px)}
-  .card .img{height:150px; background:#0d1626 center/cover; position:relative}
-  .card .img .precio{position:absolute; left:10px; bottom:10px; background:rgba(13,22,38,.92); color:var(--acc2);
-    font-weight:800; font-size:16px; padding:4px 12px; border-radius:10px}
-  .card .img .noph{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    color:#6b8299; font-size:12px}
-  .card .cbody{padding:10px 14px 12px}
-  .card .sector{font-size:13px; font-weight:700; margin-bottom:4px}
-  .card .specs{font-size:12px; color:var(--mut); display:flex; gap:12px; margin-bottom:6px}
-  .card .loco{font-size:11.5px; color:var(--mut); display:flex; align-items:center; gap:6px}
-  .card .loco b{color:var(--txt)}
-  .badge2{position:absolute; right:10px; top:10px; font-size:10px; font-weight:800; padding:3px 8px; border-radius:8px; background:rgba(255,255,255,.92)}
-  .b2-ver{color:#0f9d6c} .b2-rev{color:#d97706} .b2-lis{color:#64748b} .b2-des{color:#94a3b8}
+/* ── Barra superior ── */
+#top{position:fixed;inset:0 0 auto 0;z-index:1000;background:linear-gradient(180deg,var(--fondo) 70%,transparent);padding:10px 12px 18px}
+#brandrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#brand{font-weight:900;font-size:19px;letter-spacing:.5px;white-space:nowrap}
+#brand b{color:var(--agua)}
+#brand .cl{font-size:10px;background:var(--agua);color:#04222B;border-radius:4px;padding:1px 5px;vertical-align:3px;margin-left:4px;letter-spacing:1px}
+#tagline{font-size:11px;color:var(--sub);letter-spacing:.2px;display:none}
+@media(min-width:520px){#tagline{display:block}}
+#buscar{flex:1;min-width:0;background:var(--panel);border:1px solid var(--borde);color:var(--texto);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none}
+#buscar::placeholder{color:var(--sub)}
+#buscar:focus{border-color:var(--agua)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;background:var(--panel);border:1px solid var(--borde);color:var(--sub);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;user-select:none;transition:.15s;white-space:nowrap}
+.chip:focus-visible{outline:2px solid var(--agua);outline-offset:2px}
+.chip.on{background:var(--panel2);color:var(--texto);border-color:var(--agua)}
+.chip.capa.on{color:var(--agua)}
+#nres{font-size:11.5px;color:var(--sub);margin-top:6px}
+#nres b{color:var(--texto)}
 
-  /* ============ CHAT ============ */
-  #chatBtn{position:absolute; z-index:40; bottom:24px; right:24px; width:56px; height:56px; border-radius:50%;
-    background:var(--acc); color:#fff; border:none; font-size:24px; cursor:pointer;
-    box-shadow:0 6px 20px rgba(46,94,140,.45); transition:.2s}
-  #chatBtn:hover{transform:scale(1.08); box-shadow:0 8px 26px rgba(46,94,140,.6)}
-  #chat{position:absolute; z-index:40; bottom:92px; right:24px; width:360px; max-width:calc(100vw - 32px);
-    height:480px; max-height:calc(100vh - 120px); background:var(--panel); border-radius:18px;
-    box-shadow:0 12px 48px rgba(0,0,0,.22); display:none; flex-direction:column; overflow:hidden;
-    border:1px solid var(--line)}
-  #chat.open{display:flex}
-  #chatHead{display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--acc); color:#fff}
-  #chatHead .ch-av{width:34px; height:34px; background:rgba(255,255,255,.2); border-radius:50%;
-    display:flex; align-items:center; justify-content:center; font-size:18px}
-  #chatHead .ch-title{font-size:14px; font-weight:800}
-  #chatHead .ch-sub{font-size:11px; opacity:.85}
-  #chatHead .ch-close{margin-left:auto; background:none; border:none; color:#fff; font-size:16px; cursor:pointer; opacity:.8}
-  #chatMsgs{flex:1; overflow-y:auto; padding:12px 12px 4px}
-  .msg{max-width:84%; padding:9px 13px; border-radius:14px; margin-bottom:10px; font-size:13px; line-height:1.45; animation:aparecer .25s ease}
-  @keyframes aparecer{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
-  .msg.bot{background:#eef2f7; color:var(--txt); border-bottom-left-radius:4px; align-self:flex-start}
-  .msg.user{background:var(--acc); color:#fff; margin-left:auto; border-bottom-right-radius:4px}
-  .msg.bot a{color:var(--acc)}
-  .chips-res{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
-  .chip-res{font-size:11.5px; padding:4px 10px; border-radius:16px; border:1px solid var(--acc);
-    color:var(--acc); background:#fff; cursor:pointer}
-  .chip-res:hover{background:var(--acc); color:#fff}
-  .casa-mini{border:1px solid var(--line); border-radius:12px; margin-top:8px; overflow:hidden; cursor:pointer; background:#fff}
-  .casa-mini:hover{border-color:var(--acc); box-shadow:0 3px 12px rgba(46,94,140,.15)}
-  .casa-mini .cm-img{height:88px; background:#0d1626 center/cover; position:relative}
-  .casa-mini .cm-p{position:absolute; left:8px; bottom:8px; background:rgba(13,22,38,.92); color:var(--acc2);
-    font-weight:800; font-size:13px; padding:2px 9px; border-radius:8px}
-  .casa-mini .cm-b{padding:7px 10px 9px}
-  .casa-mini .cm-s{font-size:11.5px; font-weight:700}
-  .casa-mini .cm-d{font-size:10.5px; color:var(--mut); margin-top:1px}
-  .typing{display:inline-flex; gap:4px; padding:4px 2px}
-  .typing span{width:6px; height:6px; background:#94a3b8; border-radius:50%; animation:tp 1.2s infinite}
-  .typing span:nth-child(2){animation-delay:.15s} .typing span:nth-child(3){animation-delay:.3s}
-  @keyframes tp{0%,60%,100%{transform:translateY(0); opacity:.5} 30%{transform:translateY(-4px); opacity:1}}
-  #chatSug{display:flex; gap:6px; padding:6px 12px; overflow-x:auto; flex-shrink:0}
-  .sug{flex-shrink:0; font-size:11px; padding:5px 11px; border-radius:16px; border:1px solid var(--line);
-    background:#f8fafc; color:var(--mut); cursor:pointer; white-space:nowrap}
-  .sug:hover{border-color:var(--acc); color:var(--acc)}
-  #chatInputBox{display:flex; gap:8px; padding:10px 12px; border-top:1px solid var(--line); background:#fbfcfe}
-  #chatInput{flex:1; padding:10px 13px; border:1.5px solid var(--line); border-radius:20px; font-size:13px; outline:none}
-  #chatInput:focus{border-color:var(--acc)}
-  #chatInputBox button{width:40px; height:40px; border-radius:50%; background:var(--acc); color:#fff;
-    border:none; font-size:15px; cursor:pointer; flex-shrink:0}
-  /* ---------- MAPA ---------- */
-  #map{flex:1; position:relative}
-  .leaflet-container{background:#e8eef3}
-  .pin{display:flex; flex-direction:column; align-items:center}
-  .pin .tag{background:#17223b; color:#fff; font-size:10.5px; font-weight:800; padding:2px 8px;
-    border-radius:9px; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,.3); margin-bottom:2px}
-  .pin .dot{width:15px; height:15px; border-radius:50%; border:2.5px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.35)}
-  .mst{position:relative; display:inline-block}
-  .mst .m-dot{width:14px; height:14px; background:#C60C30; border:2.5px solid #fff; border-radius:50%;
-    box-shadow:0 2px 6px rgba(0,0,0,.35); display:block}
-  .mst .m-name{position:absolute; left:16px; top:50%; transform:translateY(-50%);
-    background:#C60C30; color:#fff; font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:5px;
-    white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,.25)}
-  .m-name2{font-size:9px; font-weight:700; color:#17223b; background:rgba(255,255,255,.88);
-    padding:1px 5px; border-radius:4px; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,.18)}
-  /* ---------- FICHA MODAL ---------- */
-  #ficha{position:absolute; z-index:30; top:0; right:-420px; width:400px; max-width:94vw; height:100%;
-    background:var(--panel); transition:right .28s ease; overflow-y:auto; box-shadow:-14px 0 44px rgba(0,0,0,.18)}
-  #ficha.open{right:0}
-  #ficha .gal{position:relative; height:230px; background:#0d1626}
-  #ficha .gal img{width:100%; height:230px; object-fit:cover; display:block}
-  #ficha .gal .nav{position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.5); color:#fff;
-    border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:17px}
-  #ficha .gal .prev{left:8px} #ficha .gal .next{right:8px}
-  #ficha .gal .cnt{position:absolute; bottom:8px; right:10px; background:rgba(0,0,0,.6); font-size:10px; padding:2px 8px; border-radius:8px; color:#fff}
-  #ficha .fbody{padding:16px 18px 24px}
-  #ficha .precio{font-size:26px; font-weight:800; color:var(--acc)}
-  #ficha .precio small{font-size:13px; color:var(--mut); font-weight:500}
-  #ficha .sector{font-size:14px; font-weight:700; margin:3px 0 10px}
-  #ficha .specs{display:flex; gap:16px; margin-bottom:12px; font-size:13.5px}
-  .scorebox{background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:12px}
-  .scorebox h4{font-size:11px; color:var(--mut); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px}
-  .scorerow{display:flex; align-items:center; gap:10px; margin:7px 0; font-size:12.5px}
-  .scorerow .lbl{width:110px; color:var(--mut)}
-  .bar{flex:1; height:7px; background:#e2e8f0; border-radius:6px; overflow:hidden}
-  .bar i{display:block; height:100%; background:linear-gradient(90deg,#5B9E6D,#34d399); border-radius:6px}
-  .scorerow .num{width:34px; text-align:right; font-weight:800}
-  .scorerow .st{width:78px; text-align:right}
-  .nota2{font-size:12px; color:var(--mut); margin-bottom:10px}
-  .calles{font-size:12px; color:var(--mut); margin-bottom:12px}
-  .calles b{color:var(--txt)}
-  .calles .cl{display:inline-block; background:#eef2f7; border-radius:7px; padding:2px 8px; margin:2px 3px 0 0; font-size:11.5px}
-  .badge{display:inline-block; font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:8px; margin-bottom:12px}
-  .b-ver{background:rgba(52,211,153,.15); color:#0f9d6c; border:1px solid rgba(52,211,153,.4)}
-  .b-lis{background:rgba(100,116,139,.12); color:var(--mut); border:1px solid var(--line)}
-  .b-rev{background:rgba(251,146,60,.15); color:#d97706; border:1px solid rgba(251,146,60,.4)}
-  .b-des{background:rgba(100,116,139,.18); color:#64748b; border:1px solid #cbd5e1}
-  #ficha .btn{display:block; text-align:center; background:var(--acc); color:#fff; font-weight:800; font-size:14px;
-    padding:12px 0; border-radius:11px; text-decoration:none; margin-bottom:8px}
-  #ficha .btn:hover{filter:brightness(1.08)}
-  #ficha .corr{font-size:11px; color:var(--mut); text-align:center}
-  #cerrar{position:absolute; top:10px; left:10px; z-index:2; background:rgba(0,0,0,.5); color:#fff; border:none;
-    width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer}
-  #hamb{display:none; position:absolute; z-index:25; top:12px; left:12px; background:#fff; border:1px solid var(--line);
-    border-radius:10px; padding:8px 12px; font-size:16px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.12)}
-  @media (max-width:860px){
-    #side{position:absolute; left:-420px; top:0; bottom:0; transition:left .28s ease; z-index:25}
-    #side.open{left:0}
-    #hamb{display:block}
-  }
+/* ── Mapa ── */
+#map{position:fixed;inset:0;background:#d8e2e8}
+.leaflet-control-attribution{font-size:9px;opacity:.75}
+
+/* ── Marcadores ── */
+.pulso{position:relative;width:16px;height:16px}
+.pulso i{position:absolute;inset:3px;border-radius:50%;border:2px solid #fff}
+.pulso::after{content:"";position:absolute;inset:0;border-radius:50%;animation:onda 2.4s ease-out infinite;opacity:.8}
+@keyframes onda{0%{box-shadow:0 0 0 0 var(--co,rgba(65,198,224,.55))}100%{box-shadow:0 0 0 16px rgba(0,0,0,0)}}
+@media (prefers-reduced-motion:reduce){.pulso::after{animation:none}}
+.canal-anim{stroke-dasharray:8 7;animation:fluir 1.6s linear infinite}
+@media (prefers-reduced-motion:reduce){.canal-anim{animation:none}}
+@keyframes fluir{to{stroke-dashoffset:-15}}
+
+/* ── Riel de tarjetas ── */
+#riel{position:fixed;left:0;right:0;bottom:0;z-index:1000;padding:8px 10px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+#riel::-webkit-scrollbar{display:none}
+.card{scroll-snap-align:start;flex:0 0 236px;background:var(--panel);border:1px solid var(--borde);border-radius:14px;padding:11px 12px;cursor:pointer;transition:border-color .15s}
+.card:hover,.card:focus-visible{border-color:var(--agua);outline:none}
+.card .precio{font-size:17px;font-weight:700}
+.card .dir{font-size:12px;color:var(--sub);margin:3px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badges{display:flex;gap:5px;flex-wrap:wrap}
+.b{font-size:10.5px;font-weight:700;border-radius:6px;padding:2.5px 7px;letter-spacing:.2px}
+.b.riesgo-alto{background:rgba(255,93,77,.16);color:var(--peligro)}
+.b.riesgo-medio{background:rgba(255,197,61,.14);color:var(--alerta)}
+.b.riesgo-atento{background:rgba(110,168,201,.15);color:var(--atento)}
+.b.riesgo-bajo{background:rgba(63,214,143,.13);color:var(--ok)}
+.b.loco{background:rgba(65,198,224,.13);color:var(--agua)}
+.b.neutro{background:var(--panel2);color:var(--sub)}
+.b.dev-ok{background:rgba(63,214,143,.13);color:var(--ok)}
+.b.dev-mal{background:rgba(255,93,77,.14);color:var(--peligro)}
+
+/* ── Ficha ── */
+#velo{position:fixed;inset:0;background:rgba(4,10,15,.55);z-index:1500;display:none;backdrop-filter:blur(2px)}
+#ficha{position:fixed;z-index:1600;background:var(--fondo);border:1px solid var(--borde);display:none;flex-direction:column;overflow:hidden;
+  left:0;right:0;bottom:0;max-height:86%;border-radius:18px 18px 0 0}
+@media(min-width:900px){#ficha{left:auto;top:12px;right:12px;bottom:12px;width:430px;max-height:none;border-radius:16px}}
+#ficha.abierta,#velo.abierta{display:flex}
+#velo.abierta{display:block}
+#fclose{position:absolute;top:10px;right:10px;z-index:5;background:rgba(11,22,32,.85);border:1px solid var(--borde);color:var(--texto);width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer}
+#fscroll{overflow-y:auto;padding-bottom:18px}
+#ffotos{display:flex;gap:2px;height:170px;background:var(--panel)}
+#ffotos img{flex:1;min-width:0;object-fit:cover}
+#fbody{padding:14px 16px 6px}
+#fprecio{font-size:26px;font-weight:700}
+#fprecio small{font-size:13px;color:var(--sub);font-weight:500;font-family:'Archivo'}
+#fdir{color:var(--sub);font-size:13.5px;margin:2px 0 10px}
+.specs{display:flex;gap:14px;font-size:13px;color:var(--sub);margin-bottom:14px}
+.specs b{color:var(--texto)}
+h3.sec{font-size:11px;letter-spacing:2.2px;color:var(--sub);text-transform:uppercase;margin:16px 0 8px;font-weight:800}
+.verd{background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:11px 12px;margin-bottom:8px;border-left:3px solid var(--borde)}
+.verd.v-alto{border-left-color:var(--peligro)}
+.verd.v-medio{border-left-color:var(--alerta)}
+.verd.v-atento{border-left-color:var(--atento)}
+.verd.v-bajo,.verd.v-ok{border-left-color:var(--ok)}
+.verd.v-agua{border-left-color:var(--agua)}
+.verd .tit{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:13.5px;margin-bottom:4px}
+.verd .det{font-size:12.5px;color:var(--sub);line-height:1.55}
+.verd .det b{color:var(--texto)}
+.verd .fuente{font-size:10px;color:#5E7D92;margin-top:6px}
+.recs{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.rec{font-size:10.5px;background:var(--panel2);border-radius:5px;padding:2px 6px;color:var(--agua);font-weight:700}
+#flink{display:block;text-align:center;background:var(--agua);color:#04222B;font-weight:800;border-radius:11px;padding:12px;margin:14px 16px 4px;text-decoration:none;font-size:14px}
+#fnota{font-size:12px;color:var(--sub);padding:0 16px;text-align:center}
+.amen-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+
+/* ── Leyenda ── */
+#leyenda{position:fixed;right:10px;bottom:120px;z-index:900;background:rgba(16,31,44,.92);border:1px solid var(--borde);border-radius:10px;padding:9px 11px;font-size:10.5px;color:var(--sub);display:none;line-height:1.9}
+#leyenda.v{display:block}
+#leyenda i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+@media(min-width:900px){#riel{left:0;right:auto;top:152px;bottom:0;width:280px;flex-direction:column;overflow-y:auto;scroll-snap-type:none;padding:6px 10px 20px}
+  .card{flex:0 0 auto}
+  #leyenda{bottom:14px}}
 </style>
 </head>
 <body>
-<div id="app">
-  <button id="hamb" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
 
-  <div id="side">
-    <div id="brand">
-      <div class="logo">🏠</div>
-      <div>
-        <h1>Arriendo<span>Mapa</span> Chile</h1>
-        <p>Plataforma gratuita de búsqueda de arriendos</p>
-      </div>
-    </div>
-    <div id="searchbox">
-      <input id="q" type="text" placeholder="Prueba: “3 dormitorios en Ñuñoa hasta 800 mil cerca del metro”">
-      <button id="qbtn" onclick="buscar()">🔍</button>
-    </div>
-    <div id="chips">
-      <span class="chip" onclick="chip(this,'baratas')">Más baratas</span>
-      <span class="chip" onclick="chip(this,'locomocion')">Mejor locomoción</span>
-      <span class="chip" onclick="chip(this,'metros')">Más grandes</span>
-      <span class="chip" onclick="chip(this,'verificadas')">Precio verificado</span>
-      <span class="chip" onclick="chip(this,'4d')">4 dormitorios</span>
-    </div>
-    <div id="filtros">
-      <div class="fsec">💰 Precio mensual</div>
-      <div class="frow">
-        <label>Desde</label>
-        <input type="range" id="fPMin" min="350000" max="1800000" step="25000" value="350000" oninput="aplicar()">
-        <span class="val" id="vPMin">$350 mil</span>
-      </div>
-      <div class="frow">
-        <label>Hasta</label>
-        <input type="range" id="fPrecio" min="350000" max="1800000" step="25000" value="1800000" oninput="aplicar()">
-        <span class="val" id="vPrecio">$1,8 M</span>
-      </div>
-      <div class="fsec">🏠 La propiedad</div>
-      <div class="frow">
-        <label>Dormitorios</label>
-        <div class="seg" id="segDorm">
-          <button class="on" data-v="1" onclick="seg(this,'dorm')">1+</button><button data-v="2" onclick="seg(this,'dorm')">2+</button><button data-v="3" onclick="seg(this,'dorm')">3+</button><button data-v="4" onclick="seg(this,'dorm')">4+</button>
-        </div>
-      </div>
-      <div class="frow">
-        <label>Baños</label>
-        <div class="seg" id="segBanos">
-          <button class="on" data-v="1" onclick="seg(this,'banos')">1+</button><button data-v="2" onclick="seg(this,'banos')">2+</button><button data-v="3" onclick="seg(this,'banos')">3+</button>
-        </div>
-      </div>
-      <div class="frow">
-        <label>Superficie mín.</label>
-        <input type="range" id="fM2" min="40" max="150" step="5" value="40" oninput="aplicar()">
-        <span class="val" id="vM2">40 m²</span>
-      </div>
-      <div class="fsec">📍 Zona y conectividad</div>
-      <div class="frow">
-        <label>Comuna</label>
-        <select id="fComuna" onchange="aplicar()"><option value="">Todas (RM)</option></select>
-      </div>
-      <div class="frow">
-        <label>Locomoción mín.</label>
-        <input type="range" id="fLoco" min="1" max="5" step="0.5" value="1" oninput="aplicar()">
-        <span class="val" id="vLoco">1+ ★</span>
-      </div>
-      <div class="frow">
-        <label>Metro a menos de</label>
-        <select id="fMetro" onchange="aplicar()">
-          <option value="99">Cualquier distancia</option>
-          <option value="0.5">500 m (caminando)</option>
-          <option value="1">1 km</option>
-          <option value="2">2 km</option>
-          <option value="4">4 km</option>
-        </select>
-      </div>
-      <div class="fsec">✨ Amenidades</div>
-      <div id="amen">
-        <label><input type="checkbox" id="aEstac" onchange="aplicar()"> 🚗 Estacionamiento</label>
-        <label><input type="checkbox" id="aMascotas" onchange="aplicar()"> 🐾 Admite mascotas</label>
-        <label><input type="checkbox" id="aPiscina" onchange="aplicar()"> 🏊 Piscina</label>
-        <label><input type="checkbox" id="aCondo" onchange="aplicar()"> 🏘️ Condominio / pasaje cerrado</label>
-      </div>
-      <div class="fsec">🔎 Tipo de aviso</div>
-      <div id="amen">
-        <label><input type="checkbox" id="aVerif" onchange="aplicar()"> ✅ Solo precio verificado</label>
-        <label><input type="checkbox" id="aFotos" onchange="aplicar()"> 📷 Solo con fotos reales</label>
-      </div>
-      <button id="limpiar" onclick="limpiar()">↺ Limpiar todos los filtros</button>
-    </div>
-    <div id="capas">
-      <label><input type="checkbox" id="cMetro" checked onchange="capas()"> 🚇 Estaciones</label>
-      <label><input type="checkbox" id="cLineas" checked onchange="capas()"> 🛤️ Líneas Metro</label>
-      <label><input type="checkbox" id="cPrecios" checked onchange="capas()"> 🏷️ Precios</label>
-    </div>
-    <div id="results"><div id="resumen"></div></div>
+<div id="map" role="application" aria-label="Mapa de arriendos"></div>
+
+<header id="top">
+  <div id="brandrow">
+    <div id="brand">ARRIENDO<b>MAPA</b><span class="cl">CL</span></div>
+    <span id="tagline">La verdad de la calle antes de arrendar</span>
+    <input id="buscar" type="search" placeholder="Buscar sector, comuna, característica…" aria-label="Buscar">
   </div>
-
-  <div id="map"></div>
-
-
-  <!-- ============ CHAT ASISTENTE ============ -->
-  <button id="chatBtn" onclick="toggleChat()" title="Asistente de búsqueda">🤖</button>
-  <div id="chat">
-    <div id="chatHead">
-      <div class="ch-av">🤖</div>
-      <div>
-        <div class="ch-title">Asistente ArriendoMapa</div>
-        <div class="ch-sub">Cuéntame qué buscas y te lo filtro</div>
-      </div>
-      <button onclick="toggleChat()" class="ch-close">✕</button>
-    </div>
-    <div id="chatMsgs"></div>
-    <div id="chatSug"></div>
-    <div id="chatInputBox">
-      <input id="chatInput" type="text" placeholder="Ej: 3 dormitorios en Ñuñoa hasta 800 mil, con mascotas">
-      <button onclick="enviarChat()">➤</button>
-    </div>
+  <div class="chips" id="chips-capas" aria-label="Capas del mapa">
+    <button class="chip capa on" data-capa="inund">💧 Inundación</button>
+    <button class="chip capa" data-capa="parad">🚌 Paraderos</button>
+    <button class="chip capa" data-capa="metro">Ⓜ️ Metro</button>
   </div>
-  <div id="ficha">
-    <button id="cerrar" onclick="cerrarFicha()">✕</button>
-    <div class="gal" id="f-gal"></div>
-    <div class="fbody" id="f-body"></div>
+  <div class="chips" id="chips-filtros" style="margin-top:6px" aria-label="Filtros">
+    <button class="chip" data-f="p450">≤ $450 mil</button>
+    <button class="chip" data-f="p600">≤ $600 mil</button>
+    <button class="chip" data-f="d3">3+ dorm</button>
+    <button class="chip" data-f="seguro">💧 Sin riesgo alto</button>
+    <button class="chip" data-f="conectado">🚌 Bien conectada</button>
+    <select id="selcomuna" class="chip" aria-label="Comuna"><option value="">Todas las comunas</option></select>
   </div>
+  <div id="nres"></div>
+</header>
+
+<div id="leyenda">
+  <b style="color:var(--texto)">Puntos críticos GORE RM</b><br>
+  <i style="background:var(--cauce)"></i>Desborde de cauce<br>
+  <i style="background:var(--agua)"></i>Anegamiento de calles<br>
+  <i style="background:var(--colector)"></i>Colapso de colectores<br>
+  <i style="background:var(--quebrada)"></i>Quebrada / aluvión<br>
+  <span style="display:inline-block;width:14px;border-top:2px dashed var(--agua);margin-right:4px;vertical-align:3px"></span>Canales
 </div>
 
-<script src="lib/leaflet.js"></script>
-<script src="data.js"></script>
+<nav id="riel" aria-label="Resultados"></nav>
+
+<div id="velo"></div>
+<aside id="ficha" aria-modal="true" role="dialog">
+  <button id="fclose" aria-label="Cerrar">✕</button>
+  <div id="fscroll">
+    <div id="ffotos"></div>
+    <div id="fbody"></div>
+    <a id="flink" target="_blank" rel="noopener">Ver aviso original ↗</a>
+    <p id="fnota"></p>
+  </div>
+</aside>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="datos.js"></script>
 <script>
-;
-// descompresión zlib sin librería externa: usar DecompressionStream
-async function cargarData(){
-  const bytes = Uint8Array.from(atob(DATA_B64), ch=>ch.charCodeAt(0));
-  const ds = new DecompressionStream("deflate");
-  const stream = new Blob([bytes]).stream().pipeThrough(ds);
-  const texto = await new Response(stream).text();
-  return JSON.parse(texto);
+function ARRANQUE(){
+const $ = s => document.querySelector(s);
+const fmt = n => '$' + n.toLocaleString('es-CL');
+const fdist = m => m < 1000 ? m + ' m' : (m/1000).toFixed(1).replace('.',',') + ' km';
+
+/* ── Puntajes ── */
+function scoreLoco(t){
+  if(!t || t.metro_m == null) return null;
+  let s = 0;
+  const m = t.metro_m;
+  s += m<=600?35 : m<=1000?30 : m<=1600?22 : m<=2600?12 : 4;
+  s += Math.min(30, (t.n_recorridos||0)*2.5);
+  s += Math.min(20, (t.buses_hora_punta||0)/6);
+  const pm = t.paradero_min_m;
+  s += pm==null?0 : pm<=250?15 : pm<=400?10 : pm<=600?5 : 0;
+  return Math.round(Math.min(100,s));
 }
-let CASAS=[], METRO=[], LINEAS=[];
-cargarData().then(d=>{
-  CASAS = d.casas; METRO = d.metro; LINEAS = d.lineas;
-  iniciarApp();
-});
-function iniciarApp(){
-const fmt = n => "$" + n.toLocaleString("es-CL");
-const fmtK = n => n>=1000000 ? "$"+(n/1000000).toLocaleString("es-CL")+" M" : "$"+Math.round(n/1000)+" mil";
-const colorPrecio = c => c.estado==="despublicado" ? "#94a3b8" : (c.precio<=500000 ? "#0f9d6c" : (c.precio<=650000 ? "#b07417" : "#c2410c"));
-const stars = n => "★".repeat(Math.round(n)) + "☆".repeat(5-Math.round(n));
-const badge = e => e==="verificado" ? '<span class="badge b-ver">✅ Precio verificado</span>'
-  : e==="verificar" ? '<span class="badge b-rev">⚠️ Confirmar precio</span>'
-  : e==="despublicado" ? '<span class="badge b-des">Publicación eliminada</span>'
-  : '<span class="badge b-lis">Precio del listado</span>';
-const badge2 = e => e==="verificado" ? '<span class="badge2 b2-ver">✅ verificado</span>'
-  : e==="verificar" ? '<span class="badge2 b2-rev">⚠️ confirmar</span>'
-  : e==="despublicado" ? '<span class="badge2 b2-des">eliminado</span>'
-  : '<span class="badge2 b2-lis">listado</span>';
+const nivelLoco = s => s==null?['s/d','neutro'] : s>=75?['Excelente','loco'] : s>=55?['Buena','loco'] : s>=35?['Media','neutro'] : ['Baja','neutro'];
+const NIV = {alto:['ALTO','v-alto'], medio:['MEDIO','v-medio'], atento:['ATENTO','v-atento'], bajo:['BAJO','v-bajo']};
+function grupoCausa(c){
+  c = c.toLowerCase();
+  if(c.includes('cauce')) return ['cauce','#2F86D6'];
+  if(c.includes('colector')) return ['colector','#8F7BF0'];
+  if(c.includes('quebrada')||c.includes('aluvi')||c.includes('barro')) return ['quebrada','#C9834F'];
+  return ['anegamiento','#41C6E0'];
+}
 
-// ---------------- MAPA ----------------
-const map = L.map("map", {zoomControl:false}).setView([-33.45,-70.66], 11);
-L.control.zoom({position:"bottomright"}).addTo(map);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-  attribution:'© OpenStreetMap · © CARTO · Transporte: OSM', maxZoom:19
-}).addTo(map);
+/* ── Mapa ── */
+const map = L.map('map',{zoomControl:false}).setView([-33.55,-70.60],12);
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  {attribution:'© OpenStreetMap · CARTO · GORE RM · DTPM', maxZoom:19}).addTo(map);
 
-const layerMetro = L.layerGroup().addTo(map);
-const layerLineas = L.layerGroup().addTo(map);
-// trazado de cada línea con su color oficial (borde blanco + línea de color, estilo plano de metro)
-LINEAS.forEach(l=>{
-  l.tramos.forEach(tramo=>{
-    L.polyline(tramo, {color:"#ffffff", weight:6, opacity:.9, interactive:false}).addTo(layerLineas);
+/* Capa inundación */
+const capaInund = L.layerGroup();
+DATOS.canales && Object.entries(DATOS.canales).forEach(([nom,segs])=>{
+  segs.forEach(seg=>{
+    if(seg.length<2) return;
+    L.polyline(seg,{color:'#41C6E0',weight:3,opacity:.85,className:'canal-anim'})
+      .bindTooltip(nom,{sticky:true}).addTo(capaInund);
   });
 });
-LINEAS.forEach(l=>{
-  l.tramos.forEach(tramo=>{
-    L.polyline(tramo, {color:l.color, weight:3.5, opacity:.95, interactive:false}).addTo(layerLineas);
-  });
+DATOS.pc.forEach(p=>{
+  const [,color] = grupoCausa(p.causa);
+  const ic = L.divIcon({className:'', iconSize:[16,16],
+    html:`<div class="pulso" style="--co:${color}66"><i style="background:${color}"></i></div>`});
+  L.marker([p.lat,p.lon],{icon:ic})
+    .bindPopup(`<b>${p.sector}</b><br>${p.causa}<br><small>${p.comuna}${p.aprox?' · ubicación aprox.':''} · Fuente: ${DATOS.meta.fuente_pc}</small>`)
+    .addTo(capaInund);
 });
-const layerEstNombres = L.layerGroup();
-METRO.forEach(m=>{
-  L.circleMarker([m.lat,m.lon], {radius:4.5, color:"#fff", weight:2, fillColor:"#17223b",
-    fillOpacity:1, interactive:false}).addTo(layerMetro);
-  L.marker([m.lat,m.lon], {icon:L.divIcon({className:"",
-    html:`<span class="m-name2">${m.name}</span>`, iconSize:null, iconAnchor:[-6,7]}),
-    interactive:false}).addTo(layerEstNombres);
+capaInund.addTo(map);
+$('#leyenda').classList.add('v');
+
+/* Capa paraderos */
+const capaParad = L.layerGroup();
+DATOS.paraderos.forEach(p=>{
+  L.circleMarker([p.lat,p.lon],{radius:3,color:'#0B1620',weight:1,fillColor:'#FFC53D',fillOpacity:.95})
+    .bindPopup(`<b>${p.c}</b> · ${p.n}<br><small>Recorridos: ${p.r.join(', ')||'s/d'}</small>`)
+    .addTo(capaParad);
 });
-function syncNombres(){
-  if (map.getZoom() >= 13 && document.getElementById("cMetro").checked) layerEstNombres.addTo(map);
-  else map.removeLayer(layerEstNombres);
-}
-map.on("zoomend", ()=>{ syncNombres(); pintarMarcadores(); }); syncNombres();
 
-const markers = {};
-let filtradas = [...CASAS];
+/* Capa metro */
+const capaMetro = L.layerGroup();
+DATOS.lineas.forEach(l=>l.tramos.forEach(tr=>{
+  if(tr.length>1) L.polyline(tr,{color:l.color,weight:3,opacity:.8}).addTo(capaMetro);
+}));
+DATOS.metro.forEach(m=>{
+  L.circleMarker([m.lat,m.lon],{radius:4,color:'#fff',weight:1.5,fillColor:'#111',fillOpacity:1})
+    .bindTooltip(m.name).addTo(capaMetro);
+});
 
-function pintarMarcadores(){
-  Object.values(markers).forEach(m=>map.removeLayer(m));
-  for (const k in markers) delete markers[k];
-  const showTags = document.getElementById("cPrecios").checked && map.getZoom() >= 12;
-  filtradas.forEach(c=>{
-    const tag = showTags ? `<span class="tag">${fmtK(c.precio)}</span>` : "";
-    const icon = L.divIcon({className:"",
-      html:`<div class="pin">${tag}<span class="dot" style="background:${colorPrecio(c)}"></span></div>`,
-      iconSize:[15,15], iconAnchor:[7,22]});
-    markers[c.id] = L.marker([c.lat,c.lon], {icon}).addTo(map).on("click", ()=>abrirFicha(c));
+/* ── Estado y filtros ── */
+const F = {p450:false,p600:false,d3:false,seguro:false,conectado:false,comuna:'',q:''};
+const comunas = [...new Set(DATOS.casas.map(c=>c.comuna))].sort();
+comunas.forEach(c=>{const o=document.createElement('option');o.value=o.textContent=c;$('#selcomuna').append(o);});
+
+let marcadores = L.layerGroup().addTo(map);
+function filtrar(){
+  const q = F.q.toLowerCase();
+  return DATOS.casas.filter(c=>{
+    if(F.p450 && c.precio>450000) return false;
+    if(F.p600 && c.precio>600000) return false;
+    if(F.d3 && c.dorm<3) return false;
+    if(F.seguro && c.r.nivel==='alto') return false;
+    if(F.conectado && (scoreLoco(c.t)||0) < 55) return false;
+    if(F.comuna && c.comuna!==F.comuna) return false;
+    if(q && !(`${c.sector} ${c.comuna} ${c.nota} ${c.corr}`.toLowerCase().includes(q))) return false;
+    return true;
   });
 }
-function capas(){
-  document.getElementById("cMetro").checked ? layerMetro.addTo(map) : map.removeLayer(layerMetro);
-  document.getElementById("cLineas").checked ? layerLineas.addTo(map) : map.removeLayer(layerLineas);
-  pintarMarcadores();
-}
+const colRiesgo = {alto:'#FF5D4D',medio:'#FFC53D',atento:'#6EA8C9',bajo:'#3FD68F'};
 
-// ---------------- LISTA ----------------
-function pintarLista(){
-  const box = document.getElementById("results");
-  box.innerHTML = `<div id="resumen">${filtradas.length} propiedades · Región Metropolitana · datos al 19-jul-2026</div>`;
-  [...filtradas].sort((a,b)=>a.precio-b.precio).forEach(c=>{
-    const foto = c.fotos[0];
-    const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `
-      <div class="img" style="background-image:url('${foto}')">
-        ${badge2(c.estado)}
-        <span class="precio">${fmt(c.precio)}</span>
-      </div>
-      <div class="cbody">
-        <div class="sector">${c.sector}</div>
-        <div class="specs"><span>🛏️ ${c.dorm} dorm.</span><span>🚿 ${c.banos} baño${c.banos>1?"s":""}</span><span>📐 ${c.m2} m²</span></div>
-        <div class="loco">🚌 Locomoción <b>${c.locomocion}/5</b> <span class="stars">${stars(c.locomocion)}</span> · 🚇 ${c.metro_cercano} (${c.metro_km} km)</div>
+function render(){
+  const res = filtrar();
+  marcadores.clearLayers();
+  res.forEach(c=>{
+    L.circleMarker([c.lat,c.lon],{radius:7,color:'#0B1620',weight:2,
+      fillColor:colRiesgo[c.r.nivel],fillOpacity:.95})
+      .on('click',()=>abrirFicha(c)).addTo(marcadores);
+  });
+  const riel = $('#riel'); riel.innerHTML='';
+  res.forEach(c=>{
+    const s = scoreLoco(c.t), [ln] = nivelLoco(s);
+    const dev = c.dev==null?'' : `<span class="b ${c.dev<=-5?'dev-ok':c.dev>=8?'dev-mal':'neutro'}">${c.dev>0?'+':''}${c.dev}% /m²</span>`;
+    const el = document.createElement('button');
+    el.className='card';
+    el.innerHTML = `<div class="precio mono">${fmt(c.precio)}</div>
+      <div class="dir">${c.sector} · ${c.comuna}</div>
+      <div class="badges">
+        <span class="b riesgo-${c.r.nivel}">💧 ${NIV[c.r.nivel][0]}</span>
+        <span class="b loco">🚌 ${ln}${s!=null?' '+s:''}</span>
+        <span class="b neutro">${c.dorm}D·${c.banos}B·${c.m2}m²</span>${dev}
       </div>`;
-    el.onclick = ()=>{ abrirFicha(c); map.flyTo([c.lat,c.lon], 16, {duration:.7}); };
-    box.appendChild(el);
+    el.onclick = ()=>{ map.flyTo([c.lat,c.lon],15,{duration:.7}); abrirFicha(c); };
+    riel.append(el);
   });
+  $('#nres').innerHTML = `<b>${res.length}</b> de ${DATOS.casas.length} avisos · datos reales jul-2026 · capa inundación: ${DATOS.pc.length} puntos críticos oficiales`;
 }
 
-// ---------------- FICHA ----------------
-const idx = {};
-window.mover = (id,d)=>{
-  const c = CASAS.find(x=>x.id===id);
-  idx[id] = ((idx[id]||0)+d+c.fotos.length)%c.fotos.length;
-  document.getElementById("f-img").src = c.fotos[idx[id]];
-  document.getElementById("f-cnt").textContent = (idx[id]+1)+"/"+c.fotos.length;
-};
+/* ── Ficha ── */
 function abrirFicha(c){
-  idx[c.id] = 0;
-  const fotos = c.fotos;
-  document.getElementById("f-gal").innerHTML = fotos.length>1
-    ? `<img id="f-img" src="${fotos[0]}">
-       <button class="nav prev" onclick="mover(${c.id},-1)">‹</button>
-       <button class="nav next" onclick="mover(${c.id},1)">›</button>
-       <span class="cnt" id="f-cnt">1/${fotos.length}</span>`
-    : `<img src="${fotos[0]}">`;
-  const pct = c.locomocion/5*100;
-  const precioM2 = Math.round(c.precio/c.m2);
-  const valM2 = precioM2<=6000 ? 5 : precioM2<=7500 ? 4 : precioM2<=9000 ? 3 : precioM2<=10500 ? 2 : 1;
-  document.getElementById("f-body").innerHTML = `
-    <div class="precio">${fmt(c.precio)} <small>/mes</small></div>
-    <div class="sector">${c.sector}</div>
-    <div class="specs">
-      <span>🛏️ ${c.dorm} dorm.</span><span>🚿 ${c.banos} baño${c.banos>1?"s":""}</span><span>📐 ${c.m2} m² útiles</span>
+  $('#ffotos').innerHTML = (c.fotos||[]).map(f=>`<img src="${f}" alt="" loading="lazy">`).join('');
+  $('#ffotos').style.display = (c.fotos&&c.fotos.length)?'flex':'none';
+  const s = scoreLoco(c.t), [ln] = nivelLoco(s);
+  const t = c.t||{}, r = c.r;
+  const amen = c.amen ? Object.entries(c.amen).filter(([,v])=>v).map(([k])=>({estac:'Estacionamiento',mascotas:'Acepta mascotas',piscina:'Piscina',condominio:'Condominio'}[k]||k)) : [];
+  const canalLinea = r.canal ? `<br><b>${r.canal}</b> a <b class="mono">${fdist(r.canal_m)}</b> de la propiedad.` : '';
+  $('#fbody').innerHTML = `
+    <div id="fprecio" class="mono">${fmt(c.precio)}<small> /mes</small></div>
+    <div id="fdir">${c.sector} · ${c.comuna} · ${c.corr}${c.estado==='verificado'?' · ✓ verificado':''}</div>
+    <div class="specs"><span><b>${c.dorm}</b> dorm</span><span><b>${c.banos}</b> baños</span><span><b>${c.m2}</b> m²</span><span class="mono"><b>${c.pxm?('$'+c.pxm.toLocaleString('es-CL')):'—'}</b>/m²</span></div>
+    ${amen.length?`<div class="amen-tags">${amen.map(a=>`<span class="b neutro">${a}</span>`).join('')}</div>`:''}
+    <h3 class="sec">Informe crítico</h3>
+    <div class="verd ${NIV[r.nivel][1]}">
+      <div class="tit"><span>💧 Riesgo de invierno</span><span class="b riesgo-${r.nivel}">${NIV[r.nivel][0]}</span></div>
+      <div class="det">Punto crítico más cercano a <b class="mono">${fdist(r.pc_m)}</b>: <b>${r.pc_sector}</b> — ${r.pc_causa.toLowerCase()}${r.pc_aprox?' <i>(ubicación aprox.)</i>':''}.${canalLinea}</div>
+      <div class="fuente">Fuente: ${DATOS.meta.fuente_pc} · referencial, no es un certificado de riesgo</div>
     </div>
-    <div class="scorebox">
-      <h4>Evaluación del sector (1–5)</h4>
-      <div class="scorerow"><span class="lbl">🚌 Locomoción</span>
-        <div class="bar"><i style="width:${pct}%"></i></div>
-        <span class="num">${c.locomocion}</span><span class="st stars">${stars(c.locomocion)}</span></div>
-      <div class="scorerow"><span class="lbl">💰 Precio por m²</span>
-        <div class="bar"><i style="width:${valM2/5*100}%"></i></div>
-        <span class="num">${valM2}</span><span class="st stars">${stars(valM2)}</span></div>
-      <div style="font-size:11px;color:var(--mut);margin-top:8px">
-        🚇 Metro ${c.metro_cercano} a ${c.metro_km} km · 🚌 ${c.paraderos_400m} paraderos en 400 m · ${fmt(precioM2)}/m²
-      </div>
+    <div class="verd v-agua">
+      <div class="tit"><span>🚌 Locomoción real</span><span class="b loco">${ln}${s!=null?' · '+s+'/100':''}</span></div>
+      <div class="det"><b>${t.n_recorridos??'—'}</b> recorridos en 500 m · <b class="mono">${t.buses_hora_punta??'—'}</b> buses/h en punta · paradero a <b class="mono">${t.paradero_min_m!=null?fdist(t.paradero_min_m):'—'}</b> · Metro <b>${t.metro_est||'—'}</b> a <b class="mono">${t.metro_m!=null?fdist(t.metro_m):'—'}</b>
+      ${t.recorridos&&t.recorridos.length?`<div class="recs">${t.recorridos.slice(0,10).map(x=>`<span class="rec">${x}</span>`).join('')}</div>`:''}</div>
+      <div class="fuente">Fuente: ${DATOS.meta.fuente_gtfs} (paraderos, recorridos y frecuencias)</div>
     </div>
-    ${c.calles && c.calles.length ? `<div class="calles"><b>Calles cercanas:</b><br>${c.calles.map(x=>`<span class="cl">${x}</span>`).join("")}</div>` : ""}
-    ${c.nota ? `<div class="nota2">💡 ${c.nota}</div>` : ""}
-    ${badge(c.estado)}
-    <a class="btn" href="${c.link}" target="_blank" rel="noopener">Ver aviso completo →</a>
-    <div class="corr">Publica: ${c.corr}</div>`;
-  document.getElementById("ficha").classList.add("open");
+    <div class="verd ${c.dev==null?'':(c.dev<=-5?'v-ok':c.dev>=8?'v-alto':'')}">
+      <div class="tit"><span>💰 Precio vs comuna</span>${c.dev!=null?`<span class="b ${c.dev<=-5?'dev-ok':c.dev>=8?'dev-mal':'neutro'}">${c.dev>0?'+':''}${c.dev}%</span>`:''}</div>
+      <div class="det">${c.dev==null?'Sin m² informados para comparar.':`Este arriendo está <b>${c.dev>0?c.dev+'% sobre':Math.abs(c.dev)+'% bajo'}</b> la mediana de $/m² de ${c.comuna} (mediana: <b class="mono">$${(DATOS.meta.medianas_pxm[c.comuna]||0).toLocaleString('es-CL')}/m²</b>, calculada con los avisos de esta plataforma).`}</div>
+    </div>`;
+  $('#flink').href = c.link;
+  $('#fnota').textContent = c.nota || '';
+  $('#ficha').classList.add('abierta'); $('#velo').classList.add('abierta');
 }
-window.cerrarFicha = ()=>document.getElementById("ficha").classList.remove("open");
+const cerrar = ()=>{$('#ficha').classList.remove('abierta');$('#velo').classList.remove('abierta');};
+$('#fclose').onclick = cerrar; $('#velo').onclick = cerrar;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar();});
 
-// ---------------- FILTROS ----------------
-let chipActivo = null;
-const state = {dorm:1, banos:1};
-function seg(el, tipo){
-  const padre = el.parentElement;
-  padre.querySelectorAll("button").forEach(b=>b.classList.remove("on"));
-  el.classList.add("on");
-  state[tipo] = +el.dataset.v;
-  aplicar();
+/* ── Interacción chips ── */
+document.querySelectorAll('#chips-filtros .chip[data-f]').forEach(ch=>{
+  ch.onclick = ()=>{ F[ch.dataset.f]=!F[ch.dataset.f]; ch.classList.toggle('on'); render(); };
+});
+$('#selcomuna').onchange = e=>{ F.comuna=e.target.value; render(); };
+$('#buscar').oninput = e=>{ F.q=e.target.value; render(); };
+document.querySelectorAll('.chip.capa').forEach(ch=>{
+  ch.onclick = ()=>{
+    ch.classList.toggle('on');
+    const on = ch.classList.contains('on');
+    const capa = {inund:capaInund,parad:capaParad,metro:capaMetro}[ch.dataset.capa];
+    on ? capa.addTo(map) : map.removeLayer(capa);
+    if(ch.dataset.capa==='inund') $('#leyenda').classList.toggle('v',on);
+  };
+});
+
+render();
 }
-function chip(el, tipo){
-  if (chipActivo===tipo){ chipActivo=null; el.classList.remove("on"); aplicar(); return; }
-  chipActivo = tipo;
-  document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));
-  el.classList.add("on");
-  aplicar();
-}
-// poblar selector de comunas (ordenadas por cantidad de avisos)
 (function(){
-  const conteo = {};
-  CASAS.forEach(c=>{ const k = c.comuna||"Otra"; conteo[k]=(conteo[k]||0)+1; });
-  const sel = document.getElementById("fComuna");
-  Object.entries(conteo).sort((a,b)=>b[1]-a[1]).forEach(([k,n])=>{
-    const o = document.createElement("option");
-    o.value = k; o.textContent = `${k} (${n})`;
-    sel.appendChild(o);
-  });
+  var intentos=0;
+  function go(){ if(window.L){ARRANQUE();} else if(++intentos===18){
+    var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';document.head.appendChild(s);
+    var c=document.createElement('link');c.rel='stylesheet';c.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(c);
+    setTimeout(go,300);
+  } else setTimeout(go,150); }
+  go();
 })();
-function aplicar(){
-  const pMin = +document.getElementById("fPMin").value;
-  let pMax = +document.getElementById("fPrecio").value;
-  if (pMax < pMin){ document.getElementById("fPrecio").value = pMin; pMax = pMin; }
-  const m2Min = +document.getElementById("fM2").value;
-  const lMin = +document.getElementById("fLoco").value;
-  const metroMax = +document.getElementById("fMetro").value;
-  const comuna = document.getElementById("fComuna").value;
-  document.getElementById("vPMin").textContent = pMin>=1000000 ? "$"+(pMin/1000000).toFixed(1).replace(".",",")+" M" : "$"+Math.round(pMin/1000)+" mil";
-  document.getElementById("vPrecio").textContent = pMax>=1000000 ? "$"+(pMax/1000000).toFixed(1).replace(".",",")+" M" : "$"+Math.round(pMax/1000)+" mil";
-  document.getElementById("vM2").textContent = m2Min+" m²";
-  document.getElementById("vLoco").textContent = lMin+"+ ★";
-  filtradas = CASAS.filter(c=>
-    c.precio>=pMin && c.precio<=pMax &&
-    c.dorm>=state.dorm && c.banos>=state.banos &&
-    c.m2>=m2Min && c.locomocion>=lMin &&
-    c.metro_km<=metroMax &&
-    (!comuna || c.comuna===comuna) &&
-    (!document.getElementById("aEstac").checked || c.amen.estac) &&
-    (!document.getElementById("aMascotas").checked || c.amen.mascotas) &&
-    (!document.getElementById("aPiscina").checked || c.amen.piscina) &&
-    (!document.getElementById("aCondo").checked || c.amen.condominio) &&
-    (!document.getElementById("aVerif").checked || c.estado==="verificado") &&
-    (!document.getElementById("aFotos").checked || c.fotos.some(f=>f.startsWith("https")))
-  );
-  if (chipActivo==="baratas") filtradas = filtradas.filter(c=>c.precio<=500000);
-  if (chipActivo==="locomocion") filtradas = filtradas.filter(c=>c.locomocion>=4);
-  if (chipActivo==="metros") filtradas = filtradas.filter(c=>c.m2>=90);
-  if (chipActivo==="verificadas") filtradas = filtradas.filter(c=>c.estado==="verificado");
-  if (chipActivo==="4d") filtradas = filtradas.filter(c=>c.dorm>=4);
-  pintarLista(); pintarMarcadores();
-}
-function limpiar(){
-  document.getElementById("fPMin").value = 350000;
-  document.getElementById("fPrecio").value = 1800000;
-  document.getElementById("fM2").value = 40;
-  document.getElementById("fLoco").value = 1;
-  document.getElementById("fMetro").value = 99;
-  document.getElementById("fComuna").value = "";
-  document.getElementById("q").value = "";
-  ["aEstac","aMascotas","aPiscina","aCondo","aVerif","aFotos"].forEach(id=>document.getElementById(id).checked=false);
-  state.dorm = 1; state.banos = 1;
-  document.querySelectorAll(".seg button").forEach(b=>b.classList.remove("on"));
-  document.querySelector('#segDorm button[data-v="1"]').classList.add("on");
-  document.querySelector('#segBanos button[data-v="1"]').classList.add("on");
-  chipActivo = null;
-  document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));
-  aplicar();
-}
-
-// ---------------- BÚSQUEDA EN LENGUAJE NATURAL ----------------
-function buscar(){
-  const q = document.getElementById("q").value.toLowerCase().trim();
-  limpiar();
-  if (!q){ return; }
-  const nums = q.match(/(\d[\d\.\,]*)/g);
-  let pMax = 1800000, dMin = 1, lMin = 1;
-  // precio: "500 mil", "500.000", "hasta 450", "$650000"
-  const mPrecio = q.match(/(\d{3}(?:[\.\,]\d{3})?)\s*(mil)?/) ;
-  if (mPrecio){
-    let n = parseInt(mPrecio[1].replace(/[\.\,]/g,""));
-    if (mPrecio[2]==="mil" || n<=900) n = n*1000;
-    if (n>=300000 && n<=1800000) pMax = n;
-  }
-  const mDorm = q.match(/(\d)\s*(dorm|pieza|habitacion)/);
-  if (mDorm) dMin = +mDorm[1];
-  if (/locomoci[oó]n|metro|cercano a metro|bien ubicada|conectividad/.test(q)) lMin = 3.5;
-  if (/grande|amplia|espaciosa/.test(q)) filtradas_extra = "metros";
-  document.getElementById("fPrecio").value = pMax;
-  state.dorm = dMin;
-  document.querySelectorAll("#segDorm button").forEach(b=>b.classList.toggle("on", +b.dataset.v===Math.min(dMin,4)));
-  document.getElementById("fLoco").value = lMin;
-  aplicar();
-  // búsqueda por sector/calle
-  if (filtradas.length===CASAS.length || /bajos|mena|protectora|sotero|sótero|mercedes|plaza viva|san carlos|eyzaguirre|tobalaba|raco|nieves|casas viejas|elisa correa|florida|maip[uú]|bernard|peñalol|condes|providencia|ñuñoa|nunoa|santiago|macul|granja|navia|huechuraba|quilicura|colina|buin|paine|pudahuel/.test(q)){
-    const term = q.replace(/hasta|mil|dormitorios?|piezas?|casas?|arriendo|con|de|en|y|\d/g," ").trim().split(/\s+/).filter(w=>w.length>3);
-    if (term.length){
-      const porTexto = CASAS.filter(c=>{
-        const blob = (c.sector+" "+(c.comuna||"")+" "+(c.calles||[]).join(" ")+" "+c.nota+" "+c.metro_cercano).toLowerCase();
-        return term.some(w=>blob.includes(w));
-      });
-      if (porTexto.length){
-        const pM = +document.getElementById("fPrecio").value, dM = state.dorm, lM = +document.getElementById("fLoco").value;
-        filtradas = porTexto.filter(c=>c.precio<=pM && c.dorm>=dM && c.locomocion>=lM);
-        pintarLista(); pintarMarcadores();
-      }
-    }
-  }
-}
-document.getElementById("q").addEventListener("keydown", e=>{ if(e.key==="Enter") buscar(); });
-
-// init
-
-// ================= CHAT ASISTENTE =================
-const chatEl = document.getElementById("chat");
-const chatMsgs = document.getElementById("chatMsgs");
-let chatInit = false;
-
-window.toggleChat = function(){
-  chatEl.classList.toggle("open");
-  if (chatEl.classList.contains("open") && !chatInit){
-    chatInit = true;
-    botSay("¡Hola! 👋 Soy el asistente de <b>ArriendoMapa Chile</b>. Cuéntame qué casa buscas y te la encuentro en el mapa. Puedes decirme presupuesto, dormitorios, comuna, si tienes mascotas, qué tan cerca del Metro…");
-    mostrarSugerencias();
-  }
-};
-
-function mostrarSugerencias(){
-  const sugs = ["🏠 3 dorm. hasta 650 mil","🚇 Cerca del Metro","🐾 Que acepten mascotas","💰 Lo más barato","📍 En Ñuñoa","🏊 Con piscina"];
-  document.getElementById("chatSug").innerHTML = sugs.map(s=>`<span class="sug" onclick="sugerir('${s}')">${s}</span>`).join("");
-}
-window.sugerir = s=>{
-  document.getElementById("chatInput").value = s.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF} ]+/u,"").trim();
-  enviarChat();
-};
-
-function agregarMsg(html, tipo){
-  const d = document.createElement("div");
-  d.className = "msg "+tipo;
-  d.innerHTML = html;
-  chatMsgs.appendChild(d);
-  chatMsgs.scrollTop = chatMsgs.scrollHeight;
-  return d;
-}
-function botSay(html){ return agregarMsg(html,"bot"); }
-function userSay(txt){ agregarMsg(txt.replace(/</g,"&lt;"),"user"); }
-
-function tarjetaCasa(c){
-  const d = document.createElement("div");
-  d.className = "casa-mini";
-  d.innerHTML = `<div class="cm-img" style="background-image:url('${c.fotos[0]}')"><span class="cm-p">${fmt(c.precio)}</span></div>
-    <div class="cm-b"><div class="cm-s">${c.sector}</div>
-    <div class="cm-d">🛏️ ${c.dorm} · 🚿 ${c.banos} · 📐 ${c.m2} m² · 🚌 ${c.locomocion}★ · 🚇 ${c.metro_cercano}</div></div>`;
-  d.onclick = ()=>{ abrirFicha(c); map.flyTo([c.lat,c.lon],16,{duration:.7}); };
-  return d;
-}
-
-// ---- parser de intención (entender el mensaje) ----
-function entender(q){
-  const out = {pMax:null,pMin:null,dorm:null,banos:null,m2:null,comuna:null,locomocion:null,metroKm:null,
-    amen:{}, barato:false, grande:false};
-  const txt = q.toLowerCase();
-  // precio
-  const mP = txt.match(/(\d[\d\.\,]*)\s*(mil)?\s*(?:pesos|\$)?\s*(?:hasta|máx|maximo|máximo|tope|como máximo)?/);
-  const mHasta = txt.match(/(?:hasta|máx|maximo|máximo|tope|menos de)\s*\$?\s*(\d[\d\.\,]*)/);
-  const mDesde = txt.match(/(?:desde|mín|minimo|mínimo|más de|sobre)\s*\$?\s*(\d[\d\.\,]*)/);
-  const parseN = (s,mil)=>{ let n=parseInt(s.replace(/[\.\,]/g,"")); if(mil||n<=2000) n*=1000; return n; };
-  if (mHasta) out.pMax = parseN(mHasta[1], /mil/.test(txt));
-  if (mDesde) out.pMin = parseN(mDesde[1], /mil/.test(txt));
-  if (!mHasta && mP){ const n=parseN(mP[1], !!mP[2]); if(n>=300000&&n<=1800000) out.pMax=n; }
-  // dormitorios / baños / m2
-  const mD = txt.match(/(\d)\s*(dorm|pieza|habitacion)/); if(mD) out.dorm=+mD[1];
-  const mB = txt.match(/(\d)\s*baño/); if(mB) out.banos=+mB[1];
-  const mM2 = txt.match(/(\d{2,3})\s*m[²2]?(?!il)/); if(mM2 && !/mil/.test(txt.slice(mM2.index, mM2.index+8))) out.m2=+mM2[1];
-  // comuna
-  const comunas = [...new Set(CASAS.map(c=>c.comuna))];
-  for (const co of comunas){
-    if (co && txt.includes(co.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))) out.comuna = co;
-    if (co && txt.includes(co.toLowerCase())) out.comuna = co;
-  }
-  // locomoción / metro
-  if (/locomoci[oó]n|metro|conectividad|bien ubicad/.test(txt)){
-    out.locomocion = 3.5;
-    const mKm = txt.match(/(\d[\.,]?\d*)\s*(km|cuadra)/); 
-    if (mKm) out.metroKm = parseFloat(mKm[1].replace(",","."));
-    if (/caminando|a pie|muy cerca/.test(txt)) out.metroKm = 0.5;
-  }
-  // amenidades
-  if (/mascota|perro|gato/.test(txt)) out.amen.mascotas = true;
-  if (/piscina|pool/.test(txt)) out.amen.piscina = true;
-  if (/estacionamiento|auto|estac/.test(txt)) out.amen.estac = true;
-  if (/condominio|pasaje cerrado|seguridad/.test(txt)) out.amen.condominio = true;
-  if (/verificad/.test(txt)) out.amen.verif = true;
-  if (/barat|económic|economico|más barato/.test(txt)) out.barato = true;
-  if (/grande|amplia|espaciosa/.test(txt)) out.grande = true;
-  return out;
-}
-
-function aplicarDesdechat(f){
-  limpiar();
-  if (f.pMax) document.getElementById("fPrecio").value = Math.min(f.pMax,1800000);
-  if (f.pMin) document.getElementById("fPMin").value = f.pMin;
-  if (f.m2) document.getElementById("fM2").value = Math.min(f.m2,150);
-  if (f.locomocion) document.getElementById("fLoco").value = f.locomocion;
-  if (f.metroKm) document.getElementById("fMetro").value = f.metroKm;
-  if (f.comuna) document.getElementById("fComuna").value = f.comuna;
-  if (f.dorm){ state.dorm=f.dorm; document.querySelectorAll("#segDorm button").forEach(b=>b.classList.toggle("on", +b.dataset.v===Math.min(f.dorm,4))); }
-  if (f.banos){ state.banos=f.banos; document.querySelectorAll("#segBanos button").forEach(b=>b.classList.toggle("on", +b.dataset.v===Math.min(f.banos,3))); }
-  if (f.amen.mascotas) document.getElementById("aMascotas").checked = true;
-  if (f.amen.piscina) document.getElementById("aPiscina").checked = true;
-  if (f.amen.estac) document.getElementById("aEstac").checked = true;
-  if (f.amen.condominio) document.getElementById("aCondo").checked = true;
-  if (f.amen.verif) document.getElementById("aVerif").checked = true;
-  if (f.barato) document.getElementById("fPrecio").value = 500000;
-  if (f.grande) document.getElementById("fM2").value = 90;
-  aplicar();
-}
-
-window.enviarChat = function(){
-  const inp = document.getElementById("chatInput");
-  const q = inp.value.trim();
-  if (!q) return;
-  userSay(q);
-  inp.value = "";
-  const typing = botSay('<span class="typing"><span></span><span></span><span></span></span>');
-  setTimeout(()=>{
-    typing.remove();
-    procesarChat(q);
-  }, 650);
-};
-
-function procesarChat(q){
-  const f = entender(q);
-  aplicarDesdechat(f);
-  const n = filtradas.length;
-  // resumen de lo entendido
-  const partes = [];
-  if (f.comuna) partes.push("en <b>"+f.comuna+"</b>");
-  if (f.dorm) partes.push("de <b>"+f.dorm+"+ dorm.</b>");
-  if (f.pMax) partes.push("hasta <b>"+fmt(f.pMax)+"</b>");
-  if (f.pMin) partes.push("desde <b>"+fmt(f.pMin)+"</b>");
-  if (f.metroKm) partes.push("a <b>"+f.metroKm+" km</b> del Metro");
-  else if (f.locomocion) partes.push("con <b>buena locomoción</b>");
-  if (f.amen.mascotas) partes.push("que <b>acepten mascotas</b> 🐾");
-  if (f.amen.piscina) partes.push("con <b>piscina</b> 🏊");
-  if (f.amen.estac) partes.push("con <b>estacionamiento</b> 🚗");
-  if (f.amen.condominio) partes.push("en <b>condominio</b>");
-  const entendido = partes.length ? " casas "+partes.join(", ") : "todas las casas";
-
-  if (n===0 && f.amen.mascotas){
-    // reintento automático sin el filtro de mascotas
-    document.getElementById("aMascotas").checked = false;
-    aplicar();
-    if (filtradas.length>0){
-      const m = botSay("Con <b>mascotas</b> no encontré nada"+entendido.replace(" que <b>acepten mascotas</b> 🐾","")+", pero <b>quitando ese filtro hay "+filtradas.length+" opciones</b>. Te muestro las más convenientes (pregunta a la corredora si aceptan mascotas al contactar):");
-      const ordenadas2 = [...filtradas].sort((a,b)=>a.precio-b.precio);
-      ordenadas2.slice(0,3).forEach(c=> m.appendChild(tarjetaCasa(c)));
-      return;
-    }
-  }
-  if (n===0){
-    const m = botSay("Busqué"+entendido+" y <b>no encontré nada</b> 😅. Prueba ampliar un poco el rango: sube el presupuesto, quita una amenidad o mira otra comuna.");
-    const b = document.createElement("button"); b.className="chip-res"; b.textContent="↺ Ver todo de nuevo";
-    b.onclick = ()=>{ limpiar(); botSay("Listo, te muestro todo el catálogo de nuevo ("+CASAS.length+" casas)."); };
-    m.appendChild(b);
-    return;
-  }
-  const ordenadas = [...filtradas].sort((a,b)=>a.precio-b.precio);
-  const saludo = n===1 ? "¡Encontré <b>1 casa</b>"+entendido+"!" : "Encontré <b>"+n+" casas</b>"+entendido+".";
-  const m = botSay(saludo+" Te muestro las "+Math.min(3,n)+" más convenientes — haz clic en una para verla en el mapa:");
-  ordenadas.slice(0,3).forEach(c=> m.appendChild(tarjetaCasa(c)));
-  if (n>3){
-    const verMas = document.createElement("div");
-    verMas.style.marginTop = "6px";
-    const b = document.createElement("button"); b.className="chip-res";
-    b.textContent = "Ver las "+(n-3)+" restantes en el panel →";
-    b.onclick = ()=>{ document.getElementById("side").classList.add("open"); toggleChat(); };
-    verMas.appendChild(b); m.appendChild(verMas);
-  }
-  // acercar el mapa a los resultados
-  if (n<=6){
-    const grupo = L.featureGroup(filtradas.map(c=>L.marker([c.lat,c.lon])));
-    map.flyToBounds(grupo.getBounds().pad(0.3), {duration:.8});
-  }
-}
-document.getElementById("chatInput").addEventListener("keydown", e=>{ if(e.key==="Enter") enviarChat(); });
-
-aplicar();
-}
-
 </script>
 </body>
 </html>
